@@ -79,6 +79,11 @@ _G.packer_plugins = {
     path = "/home/chumeng/.local/share/nvim/site/pack/packer/start/Comment.nvim",
     url = "https://github.com/numToStr/Comment.nvim"
   },
+  ["coc.nvim"] = {
+    loaded = true,
+    path = "/home/chumeng/.local/share/nvim/site/pack/packer/start/coc.nvim",
+    url = "https://github.com/neoclide/coc.nvim"
+  },
   ["copilot.vim"] = {
     loaded = true,
     path = "/home/chumeng/.local/share/nvim/site/pack/packer/start/copilot.vim",
