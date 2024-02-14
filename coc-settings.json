@@ -3,5 +3,6 @@
         "server": {
             "path": "rust-analyzer",
         }
-    }
+    },
+    "snippets.ultisnips.pythonPrompt": false
 }
