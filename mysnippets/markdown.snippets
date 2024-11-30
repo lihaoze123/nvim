@@ -1,0 +1,196 @@
+# A valid snippet should starts with:
+#
+#		snippet trigger_word [ "description" [ options ] ]
+#
+# and end with:
+#
+#		endsnippet
+#
+# Snippet options:
+#
+#		b - Beginning of line.
+#		i - In-word expansion.
+#		w - Word boundary.
+#		r - Regular expression
+#		e - Custom context snippet
+#		A - Snippet will be triggered automatically, when condition matches.
+#
+# Basic example:
+#
+#		snippet emitter "emitter properties" b
+#		private readonly ${1} = new Emitter<$2>()
+#		public readonly ${1/^_(.*)/$1/}: Event<$2> = this.$1.event
+#		endsnippet
+# Online reference: https://github.com/SirVer/ultisnips/blob/master/doc/UltiSnips.txt
+
+snippet $ "LaTex" w
+\$${1:${VISUAL}}\$$0
+endsnippet
+
+snippet $$ "LaTex" bA
+$$
+${1:${VISUAL}}
+$$
+endsnippet
+
+snippet bf "mathbf" w
+\mathbf{${1:${VISUAL}}$0}
+endsnippet
+
+priority 100
+snippet ... "ldots" iA
+\ldots
+endsnippet
+
+priority 100
+snippet >= ">=" iA
+\ge
+endsnippet
+
+priority 100
+snippet <= "<=" iA
+\le
+endsnippet
+
+snippet "be(gin)?( (\S+))?" "begin{} / end{}" br
+\begin{${1:`!p
+snip.rv = match.group(3) if match.group(2) is not None else "something"`}}
+	${2:${VISUAL}}
+\end{$1}$0
+endsnippet
+
+snippet .center "<center>" wA
+<center>
+    $0
+</center>
+endsnippet
+
+snippet caption "Figure caption" bA
+<center>
+	<strong>
+	${1:${VISUAL}}
+	</strong>
+</center>
+endsnippet
+
+snippet fbox "fbox" wA
+\fbox{${1:${VISUAL}}}
+endsnippet
+
+snippet td "superscript" iA
+^{$1}$0
+endsnippet
+
+snippet // "Fraction" i
+\\frac{$1}{$2}$0
+endsnippet
+
+priority 1000
+snippet '^.*\)/' "() Fraction" wrA
+`!p
+stripped = match.string[:-1]
+depth = 0
+i = len(stripped) - 1
+while True:
+	if stripped[i] == ')': depth += 1
+	if stripped[i] == '(': depth -= 1
+	if depth == 0: break;
+	i -= 1
+snip.rv = stripped[0:i] + "\\frac{" + stripped[i+1:-1] + "}"
+`{$1}$0
+endsnippet
+
+snippet sympy "sympy block " w
+sympy ${1:${VISUAL}} sympy$0
+endsnippet
+
+priority 10000
+snippet 'sympy(.*)sympy' "evaluate sympy" wr
+`!p
+from sympy import *
+x, y, z, t = symbols('x y z t')
+k, m, n = symbols('k m n', integer=True)
+f, g, h = symbols('f g h', cls=Function)
+init_printing()
+snip.rv = eval('latex(' + match.group(1).replace('\\', '') \
+    .replace('^', '**') \
+    .replace('{', '(') \
+    .replace('}', ')') + ')')
+`
+endsnippet
+
+snippet oo "infinity" w
+\infty
+endsnippet
+
+snippet ali "Align" bA
+\begin{aligned}
+	${1:${VISUAL}}
+\end{aligned}
+endsnippet
+
+snippet != "equals" iA
+\neq 
+endsnippet
+
+snippet ceil "ceil" iA
+\left\lceil $1 \right\rceil $0
+endsnippet
+
+snippet floor "floor" iA
+\left\lfloor $1 \right\rfloor$0
+endsnippet
+
+snippet bmat "bmat" iA
+\begin{bmatrix} ${1:${VISUAL}} \end{bmatrix} $0
+endsnippet
+
+snippet lim "limit" w
+\lim_{${1:n} \to ${2:\infty}} 
+endsnippet
+
+snippet sum "sum" w
+\sum_{n=${1:1}}^{${2:\infty}} ${3:a_n z^n}
+endsnippet
+
+snippet prod "product" w
+\prod_{${1:n=${2:1}}}^{${3:\infty}} ${4:${VISUAL}} $0
+endsnippet
+
+snippet sq "\sqrt{}" i
+\sqrt{${1:${VISUAL}}} $0
+endsnippet
+
+snippet * "cross" i
+\times 
+endsnippet
+
+snippet * "cdot" i
+\cdot 
+endsnippet
+
+snippet int "integral" w
+\int_{${1:-\infty}}^{${2:\infty}} ${3:${VISUAL}} $0
+endsnippet
+
+snippet -> "to" iA
+\to 
+endsnippet
+
+snippet tt "text" i
+\text{$1}$0
+endsnippet
+
+snippet case "cases" w
+\begin{cases}
+	$1
+\end{cases}
+endsnippet
+
+snippet ** "bold" i
+ **${1:${VISUAL}}**
+endsnippet
+
+snippet bold_symbol "\boldsymbol" i
+\boldsymbol{${1:${VISUAL}}}
+endsnippet

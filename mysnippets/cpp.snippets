@@ -1,0 +1,640 @@
+# A valid snippet should starts with:
+#
+#		snippet trigger_word [ "description" [ options ] ]
+#
+# and end with:
+#
+#		endsnippet
+# Snippet options:
+#
+#		b - Beginning of line.
+#		i - In-word expansion.
+#		w - Word boundary.
+#		r - Regular expression
+#		e - Custom context snippet
+#		A - Snippet will be triggered automatically, when condition matches.
+#
+# Basic example:
+#
+#		snippet emitter "emitter properties" b
+#		private readonly ${1} = new Emitter<$2>()
+#		public readonly ${1/^_(.*)/$1/}: Event<$2> = this.$1.event
+#		endsnippet
+#
+# Online reference: https://github.com/SirVer/ultisnips/blob/master/doc/UltiSnips.txt
+
+snippet BIT "Fenwick Tree" b
+template <typename T>
+class BIT {
+private:
+    std::vector<T> bit; 
+    int n;
+
+    int lowbit(int x) { 
+        return x & -x; 
+    }
+
+public:
+    BIT (int n) : n(n) {
+        bit.assign(n, 0); 
+    }
+
+    T ask(int r) { 
+        int res = 0; 
+        for (; r > 0; r -= lowbit(r)) 
+            res += bit[r]; 
+        return res; 
+    } 
+
+    T ask(int l, int r) { 
+        if (l > r) 
+            std::swap(l, r); 
+        return ask(r) - ask(l - 1); 
+    }
+
+    void add(int i, int v) { 
+        for (; i < n; i += lowbit(i)) 
+            bit[i] += v; 
+    }
+};
+endsnippet
+
+snippet Z "Automatically do modulo" b
+template <unsigned P> struct Z {
+    unsigned v; Z() : v(0) {}
+    template <class T> Z(T x) { x %= (int)P, v = x < 0 ? x + P : x; }
+    Z operator+() const { return *this; }
+    Z operator-() const { return Z(0) - *this; }
+    Z inv() const { return assert(v), qpow(*this, P - 2); }
+    friend int raw(const Z &self) { return self.v; }
+    template <class T> friend Z qpow(Z a, T b) {
+        Z r = 1;
+        for (; b; b >>= 1, a *= a) if (b & 1) r *= a;
+        return r;
+    }
+    Z &operator+=(const Z &rhs) { if (v += rhs.v, v >= P) v -= P; return *this; }
+    Z &operator-=(const Z &rhs) { if (v -= rhs.v, v >= P) v += P; return *this; }
+    Z &operator*=(const Z &rhs) { v = 1ull * v * rhs.v % P; return *this; }
+    Z &operator/=(const Z &rhs) { return *this *= rhs.inv(); }
+    friend Z operator+(Z lhs, const Z &rhs) { return lhs += rhs; }
+    friend Z operator-(Z lhs, const Z &rhs) { return lhs -= rhs; }
+    friend Z operator*(Z lhs, const Z &rhs) { return lhs *= rhs; }
+    friend Z operator/(Z lhs, const Z &rhs) { return lhs /= rhs; }
+    friend bool operator==(const Z &lhs, const Z &rhs) { return lhs.v == rhs.v; }
+    friend bool operator!=(const Z &lhs, const Z &rhs) { return lhs.v != rhs.v; }
+};
+endsnippet
+
+snippet Treap "A portmanteau of tree and heap." b
+struct item {
+	int key, prior, cnt, size;
+	item *l, *r;
+	item () { }
+	item (int key) : key(key), prior(std::rand()), l(nullptr), r(nullptr), cnt(1), size(1) { }
+};
+
+using pitem = item*;
+
+pitem root = nullptr;
+
+void update(pitem& x) {
+	x->size = x->cnt + (x->l ? x->l->size : 0) + (x->r ? x->r->size : 0);
+}
+
+void zig(pitem& x) {
+	pitem y = x->l;
+	x->l = y->r, y->r = x, x = y;
+	update(x), update(x->r);
+}
+
+void zag(pitem& x) {
+	pitem y = x->r;
+	x->r = y->l, y->l = x, x = y;
+	update(x), update(x->l);
+}
+
+void insert(pitem& x, int y) {
+	if (!x) 
+		return x = new item(y), void();
+	if (x->key == y) 
+		return ++ x->cnt, update(x), void();
+	if (y < x->key) {
+		insert(x->l, y);
+		if (x->l->prior > x->prior) zig(x);
+	} else {
+		insert(x->r, y);
+		if (x->r->prior > x->prior) zag(x);
+	}
+	update(x);
+}
+
+void remove(pitem& x, int y) {
+	if (y < x->key) remove(x->l, y);
+	else if (y > x->key) remove(x->r, y);
+	else {
+		if (x->cnt > 1) -- x->cnt;
+		else if (!x->l) x = x->r;
+		else if (!x->r) x = x->l;
+		else {
+			zag(x);
+			remove(x->l, y);
+			if (x->l && x->l->prior > x->prior)
+				zig(x);
+		}
+	}
+	if (x) update(x);
+}
+
+pitem getPre(int v) {
+	pitem x = root, ans = new item(-1e9);
+	while (x) {
+		if (v == x->key) 
+			if (x->l) {
+				x = x->l;
+				while (x->r) x = x->r;
+				ans = x;
+			}
+		if (x->key < v && x->key > ans->key) 
+			ans = x;
+		x = v < x->key ? x->l : x->r;
+	}
+	return ans;
+}
+
+pitem getNxt(int v) {
+	pitem x = root, ans = new item(1e9);
+	while (x) {
+		if (v == x->key) 
+			if (x->r) {
+				x = x->r;
+				while (x->l) x = x->l;
+			}
+		if (x->key > v && x->key < ans->key)
+			ans = x;
+		x = v > x->key ? x->r : x->l;
+	}
+	return ans;
+}
+
+int getValByRank(pitem& x, int rank) {
+	if (!x) return 1e9;
+	if ((x->l ? x->l->size : 0) >= rank)
+		return getValByRank(x->l, rank);
+	if ((x->l ? x->l->size : 0) + x->cnt >= rank) 
+		return x->key;
+	return getValByRank(x->r, rank - (x->l ? x->l->size : 0) - x->cnt);
+}
+
+int getRankByVal(pitem& x, int v) {
+	if (!x) return 0;
+	if (v == x->key) return (x->l ? x->l->size : 0) + 1;
+	if (v < x->key) return getRankByVal(x->l, v);
+	return getRankByVal(x->r, v) + (x->l ? x->l->size : 0) + x->cnt;
+}
+endsnippet
+
+snippet Bigint "Big integer" b
+constexpr i64 BASE = 1e8, WEIGHT = 8;
+
+struct Bigint {
+    std::vector<i64> num;
+    
+    Bigint() {}
+    
+    Bigint(const char* x) {
+        i64 len = strlen(x), t = 0;
+
+        for (i64 i = 0, w = 1; i < len; w *= 10, ++ i) {
+            if (w == BASE) {
+                num.push_back(t);
+                w = 1, t = 0;
+            }
+
+            t += w * (x[len - i - 1] - 48);
+        }
+
+        if (t) num.push_back(t);
+    }
+ 
+    Bigint(const i64 x) {
+        char tmp[100];
+        sprintf(tmp, "%lld", x);
+        *this = tmp;
+    }
+
+    Bigint(const int x) {
+        *this = static_cast<i64>(x);
+    }
+ 
+    friend std::ostream& operator << (std::ostream& os, const Bigint x) {
+        if (x.num.empty())
+            os << 0;
+        for (int i = x.num.size() - 1; i >= 0; -- i) {
+            if (i != x.num.size() - 1)
+                os << std::setfill('0') << std::setw(WEIGHT) << x.num[i];
+            else
+                os << x.num[i];
+        }
+        return os;
+    }
+ 
+    friend std::istream& operator >> (std::istream& is, Bigint& x) {
+        std::string str;
+        is >> str;
+
+        x = str.c_str();
+
+        return is;
+    }
+    
+    template <typename T>
+    Bigint operator + (const T rst) {
+        Bigint res, x = rst;
+
+        i64 t = 0;
+        for (int i = 0; i < num.size() || i < x.num.size(); ++ i) {
+            if (i < num.size()) t += num[i];
+            if (i < x.num.size()) t += x.num[i];
+
+            res.num.push_back(t % BASE);
+            t /= BASE;
+        }
+
+        while (t) {
+            res.num.push_back(t % BASE);
+            t /= BASE;
+        }
+
+        while (res.num.size() > 1 && res.num.back() == 0) {
+            res.num.pop_back();
+        }
+
+        return res;
+    }
+    
+    Bigint operator * (const i64 rst) {
+        Bigint res, x = rst;
+
+        i64 t = 0;
+        for (auto &x : num) {
+            t += x * rst;
+            res.num.push_back(t % BASE);
+            t /= BASE;
+        }
+
+        while (t) {
+            res.num.push_back(t % BASE);
+            t /= BASE;
+        }
+
+        while (res.num.size() > 1 && res.num.back() == 0) {
+            res.num.pop_back();
+        }
+
+        return res;
+    }
+    
+    template <typename T>
+    Bigint operator * (const T rst) {
+        Bigint res = 0, x = rst;
+
+        std::reverse(x.num.begin(), x.num.end());
+        for (auto &i : x.num) {
+            res = res * BASE + *this * i;
+        }
+
+        return res;
+    }
+
+    Bigint operator / (const i64 rst) {
+        Bigint res;
+
+        i64 t = 0;
+        for (int i = num.size() - 1; i >= 0; -- i) {
+            t = t * BASE + num[i];
+            res.num.push_back(t / rst);
+            t %= rst;
+        }
+
+
+        std::reverse(res.num.begin(), res.num.end());
+
+        while (res.num.size() > 1 && res.num.back() == 0) {
+            res.num.pop_back();
+        }
+
+        return res;
+    }
+
+    template <typename T>
+    Bigint operator / (const T rst) {
+        Bigint l = 0, r = *this;
+
+        while (l + 2 < r) {
+            Bigint mid = (l + r + 1) / 2LL;
+            if (mid * rst <= *this) l = mid;
+            else r = mid;
+        }
+
+        for (Bigint i = l; i < r; i += 1)
+            if ((i + 1) * rst > *this)
+                return i;
+        return l;
+    }
+ 
+    template <typename T>
+    Bigint operator % (const T rst) {
+        Bigint x = *this / rst, l = 0, r = rst;
+
+        while (l + 2 < r) {
+            Bigint mid = (l + r + 1) / 2LL;
+            if (mid + x * rst <= *this) l = mid;
+            else r = mid;
+        }
+
+        for (Bigint i = l; i < r; i += 1)
+            if ((i + 1) + x * rst == *this)
+                return i;
+        return l;
+    }
+
+    template <typename T>
+    Bigint& operator *= (const T rst) {
+        *this = *this * rst;
+        return *this;
+    }
+ 
+    template <typename T> 
+    Bigint& operator += (const T rst) {
+        *this = *this + rst;
+        return *this;
+    }
+ 
+    template <typename T> 
+    bool operator < (T rst) {
+        Bigint x = rst;
+
+        if (num.size() != x.num.size()) {
+            return num.size() < x.num.size();
+        } else {
+            for(int i = num.size() - 1; i >= 0; -- i)
+                if (num[i] != x.num[i])
+                    return num[i] < x.num[i];
+        }
+
+        return true;
+    }
+ 
+    template <typename T> 
+    bool operator == (T rst) {
+        Bigint x = rst;
+        return num == x.num;
+    }
+ 
+    template <typename T> 
+    bool operator > (T rst) {
+        Bigint x = rst;
+        return !(*this == x || *this < x);
+    }
+ 
+    template <typename T>
+    bool operator <= (T rst) {
+        return *this == rst || *this < rst;
+    }
+ 
+    template <typename T>
+    bool operator >= (T rst) {
+        return *this == rst || !(*this < rst);
+    }
+};
+endsnippet
+
+snippet exgcd "扩展欧几里得算法" b
+i64 exgcd(i64 a, i64 b, i64 &x, i64 &y) {
+    if (b == 0) { x = 1, y = 0; return a; }
+    i64 d = exgcd(b, a % b, y, x);
+    y -= x * (a / b);
+    return d;
+}
+endsnippet
+
+snippet IO "快读/快输" b
+namespace IO {
+    template <typename T> inline T read() {
+        char ch = getchar();
+        T ret = 0, sig = 1;
+        while(ch < '0' || ch > '9') { if(ch == '-') sig = -1; ch = getchar(); }
+        while(ch >= '0' && ch <= '9') ret *= 10, ret += ch - 48, ch = getchar();
+        return ret * sig;
+    }
+    template <typename T> inline void write(T out) {
+        if(!out) { putchar('0'), putchar(' '); return; }
+        int stk[100], tt = 0;
+        if(out < 0) out = -out, putchar('-');
+        while(out) stk[tt++] = out % 10, out /= 10;
+        for(register int i = --tt; i>=0; --i) putchar(stk[i] + 48);
+        putchar(' ');
+    }
+    template <typename T> inline void read(T& ret) { ret = IO::read<T>(); }
+    template <typename T, typename... Args> inline void read(T& x, Args&... args) { IO::read(x), IO::read(args...); }
+    template <typename T, typename... Args> inline void write(T x, Args... args)  { IO::write(x), IO::write(args...); }
+};
+endsnippet
+
+snippet SparseTable "ST 表" b
+template <typename T>
+class SparseTable {
+    std::vector<std::vector<T>> ST;
+
+public:
+    SparseTable (const std::vector<T> &v) {
+        int n = v.size(), t = std::log(n) / std::log(2) + 1;
+        ST.assign(n, std::vector<T>(t, 0));
+
+        for (int i = 0; i < n; ++ i) {
+            ST[i][0] = v[i];
+        }
+
+        for (int j = 1; j < t; ++ j)
+            for (int i = 0; i + (1 << (j - 1)) < n; ++ i)
+                ST[i][j] = std::max(ST[i][j - 1], ST[i + (1 << (j - 1))][j - 1]);
+    }
+
+    T query(int l, int r) {
+        if (l == r)
+            return ST[l][0];
+
+        int k = std::log(r - l + 1) / std::log(2);
+        return std::max(ST[l][k], ST[r - (1 << k) + 1][k]);
+    }
+};
+endsnippet
+
+snippet Seg "Segment Tree" b
+struct Seg {
+    i64 l, r, dat, sum, add;
+};
+
+#define sum(x) tree[x].sum
+#define add(x) tree[x].add
+#define l(x) tree[x].l
+#define r(x) tree[x].r
+
+const int N = 1e5+10;
+
+Seg tree[N * 4];
+i64 a[N];
+
+void build(int p, int l, int r) {
+    l(p) = l, r(p) = r;
+
+    if (l == r) {
+        sum(p) = a[l];
+        return;
+    }
+
+    int mid = l + r >> 1;
+    build(p * 2, l, mid), build(p * 2 + 1, mid + 1, r);
+    sum(p) = sum(p * 2) + sum(p * 2 + 1);
+}
+
+void spread(int p) {
+    if (add(p)) {
+        sum(p * 2) += add(p) * (r(p * 2) - l(p * 2) + 1);
+        sum(p * 2 + 1) += add(p) * (r(p * 2 + 1) - l(p * 2 + 1) + 1);
+        add(p * 2) += add(p);
+        add(p * 2 + 1) += add(p);
+        add(p) = 0;
+    }
+}
+
+void change(int p, int l, int r, i64 v) {
+    if (l <= l(p) && r >= r(p)) {
+        sum(p) += v * (r(p) - l(p) + 1), add(p) += v;
+        return;
+    }
+
+    spread(p);
+
+    int mid = l(p) + r(p) >> 1;
+    if (l <= mid) change(p * 2, l, r, v);
+    if (r > mid) change(p * 2 + 1, l, r, v);
+    sum(p) = sum(p * 2) + sum(p * 2 + 1);
+}
+
+i64 ask(int p, int l, int r) {
+    if (l <= l(p) && r >= r(p)) 
+        return sum(p);
+
+    spread(p);
+
+    int mid = l(p) + r(p) >> 1;
+
+    i64 res = 0;
+    if (l <= mid) res += ask(p * 2, l, r);
+    if (r > mid) res += ask(p * 2 + 1, l, r);
+    return res;
+}
+endsnippet
+
+snippet pow "Fast power" b
+i64 pow(i64 a, i64 b) {
+    i64 res = 1;
+    for (; b; b >>= 1) {
+		if (b & 1) res *= a;
+		a *= a;
+    }
+    return res;
+}
+endsnippet
+
+snippet geometry "Geometry template" b
+namespace Geometry {
+using ld = long double;
+ld pi = acos(-1);
+ld eps = 1e-8;
+int sgn(ld x) { return (x > eps) - (x < -eps); }
+ld norm(ld x) { return sgn(x) ? x : 0; }
+ld toRad(ld d) { return d * pi / 180; }
+struct Line;
+// Point
+struct Vector {
+    ld x, y;
+    Vector(ld x_ = 0, ld y_ = 0) : x(x_), y(y_) {}
+    Vector operator-() const { return Vector(-x, -y); }
+    friend Vector operator+(Vector a, Vector b) { return Vector(a.x + b.x, a.y + b.y); }
+    friend Vector operator-(Vector a, Vector b) { return Vector(a.x - b.x, a.y - b.y); }
+    friend Vector operator*(Vector a, ld b) { return Vector(a.x * b, a.y * b); }
+    friend Vector operator*(ld a, Vector b) { return Vector(a * b.x, a * b.y); }
+    friend Vector operator/(Vector a, ld b) { return Vector(a.x / b, a.y / b); }
+    friend bool operator==(Vector a, Vector b) { return !sgn(a.x - b.x) && !sgn(a.y - b.y); }
+    friend ld operator*(Vector a, Vector b) { return a.x * b.x + a.y * b.y; } // 点乘
+    friend ld operator^(Vector a, Vector b) { return a.x * b.y - a.y * b.x; } // 叉乘
+    Vector unitVec() { return *this / len(); }
+    ld len() { return sqrt(*this * *this); }  // 欧几里得距离
+    ld len2() { return *this * *this; }       // 欧几里得距离(不开方)
+    ld lenM() { return abs(x) + abs(y); }     // 曼哈顿距离
+    Vector rotate() { return Vector(-y, x); } // 逆时针旋转90
+    Vector rotate(ld rad) {                   // 逆时针旋转rad
+        return Vector(x * cos(rad) - y * sin(rad), x * sin(rad) + y * cos(rad));
+    }
+    int direction() { // [0,pi)->1, [pi,2*pi)->-1
+        return y > 0 || (sgn(y) == 0 && x > 0) ? 1 : -1;
+    }
+    friend istream &operator>>(istream &is, Vector &p) { return is >> p.x >> p.y; }
+    friend ostream &operator<<(ostream &os, Vector &p) {
+        return os << "(" << norm(p.x) << ", " << norm(p.y) << ")";
+    }
+    // 点与直线
+    int PointLineRelation(Line l); // 0: on, 1: left, -1: right
+    bool onSegment(Line l);
+    ld PointLineDist(Line l);
+    Vector PointLineProj(Line l);
+};
+// Vector
+ld angle1(Vector a, Vector b) { return acos(a * b / a.len() / b.len()); } // 夹角
+ld angle2(Vector a, Vector b) { return abs(atan2(abs(a ^ b), a * b)); }   // 夹角
+bool parallel(Vector a, Vector b) { return sgn(a ^ b) == 0; }             // 平行
+bool vertical(Vector a, Vector b) { return sgn(a * b) == 0; }             // 垂直
+// Line
+struct Line {
+    Vector a, b;
+    Line(Vector a_ = Vector(), Vector b_ = Vector()) : a(a_), b(b_) {}
+    friend ostream &operator<<(ostream &os, Line l) {
+        return os << "<" << l.a << ", " << l.b << ">";
+    }
+};
+using Segment = Line;
+int Vector::PointLineRelation(Line l) { return sgn((l.b - l.a) ^ (*this - l.a)); }
+bool Vector::onSegment(Line l) {
+    return sgn((l.b - l.a) ^ (*this - l.a)) == 0 && sgn((l.a - *this) * (l.b - *this)) <= 0;
+}
+ld Vector::PointLineDist(Line l) { return abs((l.b - l.a) ^ (*this - l.a)) / (l.b - l.a).len(); }
+Vector Vector::PointLineProj(Line l) {
+    return l.a + (l.b - l.a) * ((*this - l.a) * (l.b - l.a)) / (l.b - l.a).len2();
+}
+int LineRelation(Line l1, Line l2) { // 0: 平行 1: 重合 2: 相交
+    if (sgn((l2.b - l2.a) ^ (l1.b - l1.a)))
+        return (l1.a.PointLineRelation(l2) == 0) ? 1 : 0;
+    return 2;
+}
+}; // namespace Geometry
+endsnippet
+
+snippet debug "header file version" b
+#ifndef ONLINE_JUDGE
+#include ".debug.cpp"
+#endif
+endsnippet
+
+snippet pii "pair<int, int>" w
+std::pair<int, int>$0
+endsnippet
+
+snippet adj "adj list" b
+std::unordered_map<int, std::vector<int>> adj;
+endsnippet
+
+snippet "(\w+?)\.be(gin)?" "*.begin() and *.end()" wrA
+`!p snip.rv=match.group(1)`.begin(), `!p snip.rv=match.group(1)`.end()$0
+endsnippet

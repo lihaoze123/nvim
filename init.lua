@@ -1,0 +1,17 @@
+require("plugins.plugins-setup")
+require("plugins.lualine")
+require("plugins.nvim-tree")
+require("plugins.treesitter")
+require("plugins.comment")
+require("plugins.gitsigns")
+require("plugins.leap")
+require("plugins.indent-blankline")
+require("plugins.competitest")
+
+require("plugins.lspconfig")
+require("plugins.cmp")
+require("plugins.ultisnips")
+require("plugins.autopairs")
+
+require("core.options")
+require("core.keymaps")
