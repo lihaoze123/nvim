@@ -10,8 +10,7 @@
 #		b - Beginning of line.
 #		i - In-word expansion.
 #		w - Word boundary.
-#		r - Regular expression
-#		e - Custom context snippet
+#		r - Regular expression e - Custom context snippet
 #		A - Snippet will be triggered automatically, when condition matches.
 #
 # Basic example:
@@ -23,65 +22,121 @@
 #
 # Online reference: https://github.com/SirVer/ultisnips/blob/master/doc/UltiSnips.txt
 
-snippet BIT "Fenwick Tree" b
+snippet fenwick "Fenwick Tree" b
 template <typename T>
-class BIT {
-private:
-    std::vector<T> bit; 
+struct Fenwick {
     int n;
+    std::vector<T> a;
 
-    int lowbit(int x) { 
-        return x & -x; 
+    Fenwick(int n_ = 0) {
+        init(n_);
     }
 
-public:
-    BIT (int n) : n(n) {
-        bit.assign(n, 0); 
+    void init(int n_) {
+        n = n_;
+        a.assign(n, T{});
     }
 
-    T ask(int r) { 
-        int res = 0; 
-        for (; r > 0; r -= lowbit(r)) 
-            res += bit[r]; 
-        return res; 
-    } 
-
-    T ask(int l, int r) { 
-        if (l > r) 
-            std::swap(l, r); 
-        return ask(r) - ask(l - 1); 
+    void add(int x, const T& v) {
+        for (int i = x + 1; i <= n; i += i & -i) {
+            a[i - 1] = a[i - 1] + v;
+        }
     }
 
-    void add(int i, int v) { 
-        for (; i < n; i += lowbit(i)) 
-            bit[i] += v; 
+    T sum(int x) {
+        T ans{};
+        for (int i = x; i > 0; i -= i & -i) {
+            ans = ans + a[i - 1];
+        }
+        return ans;
+    }
+
+    T rangeSum(int l, int r) {
+        return sum(r) - sum(l);
     }
 };
 endsnippet
 
 snippet Z "Automatically do modulo" b
-template <unsigned P> struct Z {
-    unsigned v; Z() : v(0) {}
-    template <class T> Z(T x) { x %= (int)P, v = x < 0 ? x + P : x; }
-    Z operator+() const { return *this; }
-    Z operator-() const { return Z(0) - *this; }
-    Z inv() const { return assert(v), qpow(*this, P - 2); }
-    friend int raw(const Z &self) { return self.v; }
-    template <class T> friend Z qpow(Z a, T b) {
-        Z r = 1;
-        for (; b; b >>= 1, a *= a) if (b & 1) r *= a;
-        return r;
+int norm(int x) {
+    if (x < 0) {
+        x += P;
     }
-    Z &operator+=(const Z &rhs) { if (v += rhs.v, v >= P) v -= P; return *this; }
-    Z &operator-=(const Z &rhs) { if (v -= rhs.v, v >= P) v += P; return *this; }
-    Z &operator*=(const Z &rhs) { v = 1ull * v * rhs.v % P; return *this; }
-    Z &operator/=(const Z &rhs) { return *this *= rhs.inv(); }
-    friend Z operator+(Z lhs, const Z &rhs) { return lhs += rhs; }
-    friend Z operator-(Z lhs, const Z &rhs) { return lhs -= rhs; }
-    friend Z operator*(Z lhs, const Z &rhs) { return lhs *= rhs; }
-    friend Z operator/(Z lhs, const Z &rhs) { return lhs /= rhs; }
-    friend bool operator==(const Z &lhs, const Z &rhs) { return lhs.v == rhs.v; }
-    friend bool operator!=(const Z &lhs, const Z &rhs) { return lhs.v != rhs.v; }
+    if (x >= P) {
+        x -= P;
+    }
+    return x;
+}
+
+template<class T>
+T power(T a, i64 b) {
+    T res = 1;
+    for (; b; b /= 2, a *= a) {
+        if (b % 2) {
+            res *= a;
+        }
+    }
+    return res;
+}
+
+struct Z {
+    int x;
+    Z(int x = 0) : x(norm(x)) {}
+    Z(i64 x) : x(norm(x % P)) {}
+    int val() const {
+        return x;
+    }
+    Z operator-() const {
+        return Z(norm(P - x));
+    }
+    Z inv() const {
+        assert(x != 0);
+        return power(*this, P - 2);
+    }
+    Z &operator*=(const Z &rhs) {
+        x = i64(x) * rhs.x % P;
+        return *this;
+    }
+    Z &operator+=(const Z &rhs) {
+        x = norm(x + rhs.x);
+        return *this;
+    }
+    Z &operator-=(const Z &rhs) {
+        x = norm(x - rhs.x);
+        return *this;
+    }
+    Z &operator/=(const Z &rhs) {
+        return *this *= rhs.inv();
+    }
+    friend Z operator*(const Z &lhs, const Z &rhs) {
+        Z res = lhs;
+        res *= rhs;
+        return res;
+    }
+    friend Z operator+(const Z &lhs, const Z &rhs) {
+        Z res = lhs;
+        res += rhs;
+        return res;
+    }
+    friend Z operator-(const Z &lhs, const Z &rhs) {
+        Z res = lhs;
+        res -= rhs;
+        return res;
+    }
+    friend Z operator/(const Z &lhs, const Z &rhs) {
+        Z res = lhs;
+        res /= rhs;
+        return res;
+    }
+    friend std::istream &operator>>(std::istream &is, Z &a) {
+        i64 v;
+        is >> v;
+        a = Z(v);
+        return is;
+    }
+    friend std::ostream &operator<<(std::ostream &os, const Z &a) {
+        return os << a.val();
+    }
 };
 endsnippet
 
@@ -316,7 +371,6 @@ struct Bigint {
             t %= rst;
         }
 
-
         std::reverse(res.num.begin(), res.num.end());
 
         while (res.num.size() > 1 && res.num.back() == 0) {
@@ -324,38 +378,6 @@ struct Bigint {
         }
 
         return res;
-    }
-
-    template <typename T>
-    Bigint operator / (const T rst) {
-        Bigint l = 0, r = *this;
-
-        while (l + 2 < r) {
-            Bigint mid = (l + r + 1) / 2LL;
-            if (mid * rst <= *this) l = mid;
-            else r = mid;
-        }
-
-        for (Bigint i = l; i < r; i += 1)
-            if ((i + 1) * rst > *this)
-                return i;
-        return l;
-    }
- 
-    template <typename T>
-    Bigint operator % (const T rst) {
-        Bigint x = *this / rst, l = 0, r = rst;
-
-        while (l + 2 < r) {
-            Bigint mid = (l + r + 1) / 2LL;
-            if (mid + x * rst <= *this) l = mid;
-            else r = mid;
-        }
-
-        for (Bigint i = l; i < r; i += 1)
-            if ((i + 1) + x * rst == *this)
-                return i;
-        return l;
     }
 
     template <typename T>
@@ -411,7 +433,10 @@ endsnippet
 
 snippet exgcd "扩展欧几里得算法" b
 i64 exgcd(i64 a, i64 b, i64 &x, i64 &y) {
-    if (b == 0) { x = 1, y = 0; return a; }
+    if (b == 0) { 
+		x = 1, y = 0;
+		return a; 
+	}
     i64 d = exgcd(b, a % b, y, x);
     y -= x * (a / b);
     return d;
@@ -470,71 +495,282 @@ public:
 };
 endsnippet
 
-snippet Seg "Segment Tree" b
-struct Seg {
-    i64 l, r, dat, sum, add;
+snippet Seg "Segment Tree with findFirst and findLast" b
+template<class Info>
+struct SegmentTree {
+    int n;
+    std::vector<Info> info;
+    SegmentTree() : n(0) {}
+    SegmentTree(int n_, Info v_ = Info()) {
+        init(n_, v_);
+    }
+    template<class T>
+    SegmentTree(std::vector<T> init_) {
+        init(init_);
+    }
+    void init(int n_, Info v_ = Info()) {
+        init(std::vector(n_, v_));
+    }
+    template<class T>
+    void init(std::vector<T> init_) {
+        n = init_.size();
+        info.assign(4 << std::__lg(n), Info());
+        std::function<void(int, int, int)> build = [&](int p, int l, int r) {
+            if (r - l == 1) {
+                info[p] = init_[l];
+                return;
+            }
+            int m = (l + r) / 2;
+            build(2 * p, l, m);
+            build(2 * p + 1, m, r);
+            pull(p);
+        };
+        build(1, 0, n);
+    }
+    void pull(int p) {
+        info[p] = info[2 * p] + info[2 * p + 1];
+    }
+    void modify(int p, int l, int r, int x, const Info &v) {
+        if (r - l == 1) {
+            info[p] = v;
+            return;
+        }
+        int m = (l + r) / 2;
+        if (x < m) {
+            modify(2 * p, l, m, x, v);
+        } else {
+            modify(2 * p + 1, m, r, x, v);
+        }
+        pull(p);
+    }
+    void modify(int p, const Info &v) {
+        modify(1, 0, n, p, v);
+    }
+    Info rangeQuery(int p, int l, int r, int x, int y) {
+        if (l >= y || r <= x) {
+            return Info();
+        }
+        if (l >= x && r <= y) {
+            return info[p];
+        }
+        int m = (l + r) / 2;
+        return rangeQuery(2 * p, l, m, x, y) + rangeQuery(2 * p + 1, m, r, x, y);
+    }
+    Info rangeQuery(int l, int r) {
+        return rangeQuery(1, 0, n, l, r);
+    }
+    template<class F>
+    int findFirst(int p, int l, int r, int x, int y, F &&pred) {
+        if (l >= y || r <= x) {
+            return -1;
+        }
+        if (l >= x && r <= y && !pred(info[p])) {
+            return -1;
+        }
+        if (r - l == 1) {
+            return l;
+        }
+        int m = (l + r) / 2;
+        int res = findFirst(2 * p, l, m, x, y, pred);
+        if (res == -1) {
+            res = findFirst(2 * p + 1, m, r, x, y, pred);
+        }
+        return res;
+    }
+    template<class F>
+    int findFirst(int l, int r, F &&pred) {
+        return findFirst(1, 0, n, l, r, pred);
+    }
+    template<class F>
+    int findLast(int p, int l, int r, int x, int y, F &&pred) {
+        if (l >= y || r <= x) {
+            return -1;
+        }
+        if (l >= x && r <= y && !pred(info[p])) {
+            return -1;
+        }
+        if (r - l == 1) {
+            return l;
+        }
+        int m = (l + r) / 2;
+        int res = findLast(2 * p + 1, m, r, x, y, pred);
+        if (res == -1) {
+            res = findLast(2 * p, l, m, x, y, pred);
+        }
+        return res;
+    }
+    template<class F>
+    int findLast(int l, int r, F &&pred) {
+        return findLast(1, 0, n, l, r, pred);
+    }
+};
+endsnippet
+
+snippet Seg "区间加线段树" b
+struct SegmentTree {
+    int n;
+    std::vector<int> tag;
+    std::vector<Info> info;
+
+    SegmentTree(int n_) : n(n_), tag(n * 4), info(n * 4) {}
+
+    void pull(int p) {
+        info[p] = info[p * 2] + info[p * 2 + 1];
+    }
+
+    void add(int p, int v) {
+        tag[p] += v;
+        info[p].sum += info[p].cnt * v;
+    }
+
+    void push(int p) {
+        add(2 * p, tag[p]);
+        add(2 * p + 1, tag[p]);
+        tag[p] = 0;
+    }
+
+    Info query(int p, int l, int r, int x, int y) {
+        if (l >= y || r <= x) {
+            return {};
+        }
+        if (l >= x && r <= y) {
+            return info[p];
+        }
+        int mid = (l + r) / 2;
+        push(p);
+        return query(p * 2, l, mid, x, y) + query(p * 2 + 1, mid, r, x, y);
+    }
+
+    Info query(int x, int y) {
+        return query(1, 0, n, x, y);
+    }
+
+    void rangeAdd(int p, int l, int r, int x, int y, int v) {
+        if (l >= y || r <= x) {
+            return;
+        }
+        if (l >= x && r <= y) {
+            add(p, v);
+            return;
+        }
+        int mid = (l + r) / 2;
+        push(p);
+        rangeAdd(p * 2, l, mid, x, y, v);
+        rangeAdd(p * 2 + 1, mid, r, x, y, v);
+        pull(p);
+    }
+
+    void rangeAdd(int x, int y, int v) {
+        rangeAdd(1, 0, n, x, y, v);
+    }
+
+    void modify(int p, int l, int r, int x, const Info& v) {
+        if (r - l == 1) {
+            info[p] = v;
+            return;
+        }
+        int mid = (l + r) / 2;
+        push(p);
+        if (x < mid) {
+            modify(p * 2, l, mid, x, v); 
+        } else {
+            modify(p * 2 + 1, mid, r, x, v);
+        }
+        pull(p);
+    }
+
+    void modify(int x, const Info& v) {
+        modify(1, 0, n, x, v);
+    }
+};
+endsnippet
+
+snippet Seg "区间最大值线段树" b
+struct Info {
+    int max = 0;
 };
 
-#define sum(x) tree[x].sum
-#define add(x) tree[x].add
-#define l(x) tree[x].l
-#define r(x) tree[x].r
+Info operator+(const Info& a, const Info& b) {
+    return { std::max(a.max, b.max) };
+}
 
-const int N = 1e5+10;
+template <typename Info>
+struct SegmentTree {
+    int n;
+    std::vector<int> tag;
+    std::vector<Info> info;
 
-Seg tree[N * 4];
-i64 a[N];
+    SegmentTree(int n_) : n(n_), tag(n * 4), info(n * 4) {}
 
-void build(int p, int l, int r) {
-    l(p) = l, r(p) = r;
-
-    if (l == r) {
-        sum(p) = a[l];
-        return;
+    void pull(int p) {
+        info[p] = info[p * 2] + info[p * 2 + 1];
     }
 
-    int mid = l + r >> 1;
-    build(p * 2, l, mid), build(p * 2 + 1, mid + 1, r);
-    sum(p) = sum(p * 2) + sum(p * 2 + 1);
-}
-
-void spread(int p) {
-    if (add(p)) {
-        sum(p * 2) += add(p) * (r(p * 2) - l(p * 2) + 1);
-        sum(p * 2 + 1) += add(p) * (r(p * 2 + 1) - l(p * 2 + 1) + 1);
-        add(p * 2) += add(p);
-        add(p * 2 + 1) += add(p);
-        add(p) = 0;
-    }
-}
-
-void change(int p, int l, int r, i64 v) {
-    if (l <= l(p) && r >= r(p)) {
-        sum(p) += v * (r(p) - l(p) + 1), add(p) += v;
-        return;
+    void add(int p, int v) {
+        tag[p] = std::max(tag[p], v);
+        info[p].max = std::max(info[p].max, v);
     }
 
-    spread(p);
+    void push(int p) {
+        add(2 * p, tag[p]);
+        add(2 * p + 1, tag[p]);
+        tag[p] = 0;
+    }
 
-    int mid = l(p) + r(p) >> 1;
-    if (l <= mid) change(p * 2, l, r, v);
-    if (r > mid) change(p * 2 + 1, l, r, v);
-    sum(p) = sum(p * 2) + sum(p * 2 + 1);
-}
+    Info query(int p, int l, int r, int x, int y) {
+        if (l >= y || r <= x) {
+            return {};
+        }
+        if (l >= x && r <= y) {
+            return info[p];
+        }
+        int mid = (l + r) / 2;
+        push(p);
+        return query(p * 2, l, mid, x, y) + query(p * 2 + 1, mid, r, x, y);
+    }
 
-i64 ask(int p, int l, int r) {
-    if (l <= l(p) && r >= r(p)) 
-        return sum(p);
+    Info query(int x, int y) {
+        return query(1, 0, n, x, y);
+    }
 
-    spread(p);
+    void rangeAdd(int p, int l, int r, int x, int y, int v) {
+        if (l >= y || r <= x) {
+            return;
+        }
+        if (l >= x && r <= y) {
+            add(p, v);
+            return;
+        }
+        int mid = (l + r) / 2;
+        push(p);
+        rangeAdd(p * 2, l, mid, x, y, v);
+        rangeAdd(p * 2 + 1, mid, r, x, y, v);
+        pull(p);
+    }
 
-    int mid = l(p) + r(p) >> 1;
+    void rangeAdd(int x, int y, int v) {
+        rangeAdd(1, 0, n, x, y, v);
+    }
 
-    i64 res = 0;
-    if (l <= mid) res += ask(p * 2, l, r);
-    if (r > mid) res += ask(p * 2 + 1, l, r);
-    return res;
-}
+    void modify(int p, int l, int r, int x, const Info& v) {
+        if (r - l == 1) {
+            info[p] = v;
+            return;
+        }
+        int mid = (l + r) / 2;
+        push(p);
+        if (x < mid) {
+            modify(p * 2, l, mid, x, v); 
+        } else {
+            modify(p * 2 + 1, mid, r, x, v);
+        }
+        pull(p);
+    }
+
+    void modify(int x, const Info& v) {
+        modify(1, 0, n, x, v);
+    }
+};
 endsnippet
 
 snippet pow "Fast power" b
@@ -621,9 +857,15 @@ int LineRelation(Line l1, Line l2) { // 0: 平行 1: 重合 2: 相交
 }; // namespace Geometry
 endsnippet
 
-snippet debug "header file version" b
+snippet debug "workdir" b
 #ifndef ONLINE_JUDGE
 #include ".debug.cpp"
+#endif
+endsnippet
+
+snippet debug "grandfather dir" b
+#ifndef ONLINE_JUDGE
+#include "../../.debug.cpp"
 #endif
 endsnippet
 
@@ -635,6 +877,115 @@ snippet adj "adj list" b
 std::unordered_map<int, std::vector<int>> adj;
 endsnippet
 
-snippet "(\w+?)\.be(gin)?" "*.begin() and *.end()" wrA
+snippet "(\w+?)\.all" "*.begin() and *.end()" wrA
 `!p snip.rv=match.group(1)`.begin(), `!p snip.rv=match.group(1)`.end()$0
+endsnippet
+
+snippet binary_search "binary search" w
+*std::ranges::partition_point(std::ranges::iota_view($1, $2), $3)$0
+endsnippet
+
+snippet DSU "dsu" b
+struct DSU {
+    std::vector<int> f, siz;
+    
+    DSU() {}
+    DSU(int n) {
+        init(n);
+    }
+    
+    void init(int n) {
+        f.resize(n);
+        std::iota(f.begin(), f.end(), 0);
+        siz.assign(n, 1);
+    }
+    
+    int find(int x) {
+        while (x != f[x]) {
+            x = f[x] = f[f[x]];
+        }
+        return x;
+    }
+    
+    bool same(int x, int y) {
+        return find(x) == find(y);
+    }
+    
+    bool merge(int x, int y) {
+        x = find(x);
+        y = find(y);
+        if (x == y) {
+            return false;
+        }
+        siz[x] += siz[y];
+        f[y] = x;
+        return true;
+    }
+    
+    int size(int x) {
+        return siz[find(x)];
+    }
+};
+endsnippet
+
+snippet SCC "Strongly connected components"
+struct SCC {
+    int n;
+    std::vector<std::vector<int>> adj;
+    std::vector<int> dfn, low, bel;
+    std::vector<int> stk;
+    int cur, cnt;
+
+    SCC() {}
+    SCC(int n) {
+        init(n);
+    }
+
+    void init(int n) {
+        this->n = n;
+        adj.assign(n, {});
+        dfn.assign(n, -1);
+        low.resize(n);
+        bel.assign(n, -1);
+        stk.clear();
+        cur = cnt = 0;
+    }
+
+    void addEdge(int u, int v) {
+        adj[u].push_back(v);
+    }
+
+    void dfs(int u) {
+        dfn[u] = low[u] = cur ++;
+        stk.push_back(u);
+        
+        for (auto v : adj[u]) {
+            if (dfn[v] == -1) {
+                dfs(v);
+                low[u] = std::min(low[u], low[v]);
+            } else if (bel[v] == -1) {
+                low[u] = std::min(low[u], dfn[v]);
+            }
+        }
+        
+        if (dfn[u] == low[u]) {
+            int v;
+            do {
+                v = stk.back();
+                bel[v] = cnt;
+                stk.pop_back();
+            } while (v != u);
+            cnt ++;
+        }
+    }
+
+    std::vector<int> work() {
+        for (int i = 0; i < n; i ++) {
+            if (dfn[i] == -1) {
+                dfs(i);
+            }
+        }
+        return bel;
+    }
+};
 endsnippet
