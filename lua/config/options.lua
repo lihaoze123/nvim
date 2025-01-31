@@ -10,3 +10,8 @@ opt.tabstop = 4
 opt.shiftwidth = 4
 opt.smartindent = true
 opt.expandtab = true
+
+if vim.g.neovide then
+    vim.o.guifont = "FiraCode Nerd Font:h18"
+    vim.g.neovide_input_ime = false
+end
