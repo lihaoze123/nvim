@@ -8,7 +8,10 @@ return {
             template_file = ".template.cpp",
             testcases_directory = "./.testcases",
             compile_command = {
-                cpp = { exec = 'g++', args = { '$(FNAME)', '-o', '$(FNOEXT)', '-std=c++23', '-fsanitize=undefined', '-g' } }
+                cpp = { exec = 'g++', args = { '$(FNAME)', '-o', '$(FNOEXT)', '-std=c++23', '-fsanitize=undefined', '-g' } },
+            },
+            run_command = {
+                go = { exec = 'go', args = { "run", "$(FNAME)" } }
             },
             received_contests_directory = "./.contest/$(CONTEST)",
         },
